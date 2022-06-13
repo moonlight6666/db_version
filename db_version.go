@@ -14,6 +14,7 @@ import (
 )
 
 const ext = ".sql"
+const sqlFileNameLen = 14
 
 type (
 	DbVersion struct {
@@ -102,7 +103,11 @@ func (d *DbVersion) Update() error {
 
 	fmt.Println("更新前数据库版本:", nowDbVersion)
 
-	files, _ := d.getSQLFileList(d.SqlDir, ext)
+	files, err := d.getSQLFileList(d.SqlDir, ext)
+	if err != nil {
+		return err
+	}
+
 	sort.Strings(files)
 	for _, v := range files {
 		err := d.execSqlFile(v, nowDbVersion)
@@ -215,17 +220,20 @@ func (d *DbVersion) fileName2Version(fileName string) (int, error) {
 // 获取文件夹下的所有SQL文件
 func (d *DbVersion) getSQLFileList(dirPth, suffix string) (files []string, err error) {
 	files = make([]string, 0, 50)
-	suffix = strings.ToUpper(suffix)
+	suffix = strings.ToLower(suffix)
 
 	err = filepath.Walk(dirPth, func(filename string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		//遍历目录
 		if fi.IsDir() {
 			// 忽略目录
 			return nil
 		}
-		if strings.HasSuffix(strings.ToUpper(fi.Name()), suffix) {
+		if strings.HasSuffix(strings.ToLower(fi.Name()), suffix) {
 			baseName := filepath.Base(filename)
-			if len(baseName) == 14 {
+			if len(baseName) == sqlFileNameLen {
 				files = append(files, filename)
 			} else {
 				fmt.Println("忽略文件:", filename)

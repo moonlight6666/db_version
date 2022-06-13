@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"os"
-	"time"
 )
 
 var (
@@ -27,10 +26,16 @@ func main() {
 	flag.StringVar(&dbName, "n", "", "数据库名字")
 	flag.StringVar(&sqlDir, "d", "./", "sql文件目录")
 
-	flag.StringVar(&action, "c", "", "操作: update|version|drop")
+	flag.StringVar(&action, "c", "", "执行操作: update|version|drop")
 
 	flag.Parse()
 
+	if dbName == "" {
+		panic("请输入数据库名称")
+	}
+	if action != "update" && action != "version" && action != "drop" {
+		panic("请输入执行操作类型 update|version|drop")
+	}
 	dbVersion, err := db_version.NewDbVersion(dbUser, dbPassword, dbHost, dbPort, dbName, sqlDir)
 	if err != nil {
 		panic(errors.Wrap(err, "连接数据库失败"))
@@ -42,7 +47,6 @@ func main() {
 		panic(errors.Wrap(err, "初始化失败"))
 	}
 
-	t1 := time.Now()
 	switch action {
 	case "update":
 		err = dbVersion.Update()
@@ -64,6 +68,4 @@ func main() {
 		fmt.Println("参数错误:", action)
 		os.Exit(1)
 	}
-	cost := time.Since(t1)
-	fmt.Println("耗时:", cost)
 }
